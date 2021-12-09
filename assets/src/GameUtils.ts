@@ -1,10 +1,5 @@
 
-
-
-
 export let GameUtils = {
-
-
 
     // // 返回nMin-nMax之间的随机整数 [min, max]
     getIntRandom(nMin, nMax): number

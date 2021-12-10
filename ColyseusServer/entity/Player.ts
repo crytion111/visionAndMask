@@ -9,11 +9,21 @@ export class Player extends Schema {
     y: number;   // y轴的位置
     @type("boolean")
     dir: boolean; // 玩家的方向(左 false 右 true) 简单定义
-    constructor(x: number, y: number, name?: string) {
+
+
+    constructor(x: number, y: number, name?: string)
+    {
         super();
         this.x = x;
         this.y = y;
         this.name = name || randomChineseName();
         this.dir = true;
+    }
+
+
+    setPos(x: number, y: number)
+    {
+        this.x = x;
+        this.y = y;
     }
 }

@@ -9,8 +9,10 @@ class NetworkManager {
     netClient: Client = null;
     netRoom: Room = null;
 
-    nMyPlayerID: string = null;
+    strMyPlayerID: string = null;
     PlayersInfo: Map<string, any> = new Map;
+
+    strRoomMainID:string = null;
 
 
     static getInstance(): NetworkManager
@@ -37,10 +39,14 @@ class NetworkManager {
             this.bIsOnline = true;
             console.log(this.netRoom.sessionId, "joined", this.netRoom.name);
 
-            this.nMyPlayerID = this.netRoom.sessionId;
+            this.strMyPlayerID = this.netRoom.sessionId;
             this.listenRoomMas();
+
+            cc.game.emit(EventName.CLIENT_GAME_LOGIN_SUCC, this.strMyPlayerID);
         } catch (e)
         {
+            cc.game.emit(EventName.CLIENT_GAME_LOGIN_FAILED, e);
+
             console.error("JOIN ERROR", e);
         }
     }
@@ -64,7 +70,7 @@ class NetworkManager {
             let msg2 = msgObj.msg;
             let msg2Obj = JSON.parse(msg2);
 
-            if(id != this.nMyPlayerID)
+            if(id != this.strMyPlayerID)
             {
                 cc.game.emit(EventName.OTHER_PLAYER_MOVE, id, msg2Obj);
             }
@@ -84,7 +90,7 @@ class NetworkManager {
                 this.PlayersInfo.set(Key, value);
             })
 
-            console.log("state change: ", this.PlayersInfo.keys(),  state.players.size);
+            // console.log("state change: ", this.PlayersInfo.keys(),  state.players.size);
         });
     }
 

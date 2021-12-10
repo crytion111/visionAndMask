@@ -1,14 +1,16 @@
 import { Room, Client } from 'colyseus';
 import { State } from '../entity/State';
+import {Player} from "../entity/Player";
 
 export class GameRoom extends Room<State> {
     // max clients
     maxClients: number = 2;
 
-    AllClients:Map<string, Client> = new Map;
+    AllClients: Map<string, Client> = new Map;
 
     // Colyseus will invoke when creating the room instance
-    onCreate(options: any) {
+    onCreate(options: any)
+    {
         // initialize empty room state
         this.setState(new State());
         // set patch rate
@@ -17,30 +19,32 @@ export class GameRoom extends Room<State> {
     }
 
     // Called every time a client joins
-    onJoin(client: Client, options?: any, auth?: any) {
+    onJoin(client: Client, options?: any, auth?: any)
+    {
         this.state.addPlayer(client);
 
         this.AllClients.set(client.sessionId, client);
 
 
-        this.onMessage("*", (client, message) => {
-            // console.log(client.sessionId, "sent", message);
-            let msg= {msg: message, playerID: client.sessionId}
+        this.onMessage("*", (client, message) =>
+        {
 
-            this.AllClients.forEach((client)=>
+            let msg = {msg: message, playerID: client.sessionId}
+
+            this.AllClients.forEach((client) =>
             {
                 client.send("*", JSON.stringify(msg))
             })
         });
 
         // 人满了才开局
-        if(this.state.players.size == this.maxClients)
+        if (this.state.players.size == this.maxClients)
         {
             this.listenPlayerMsg();
 
 
             let msg = {mainID: client.sessionId}
-            this.AllClients.forEach((client)=>
+            this.AllClients.forEach((client) =>
             {
                 client.send("GameStart", JSON.stringify(msg))
             })
@@ -48,7 +52,8 @@ export class GameRoom extends Room<State> {
     }
 
     // Called every time a client leaves
-    onLeave(client: Client, consented?: boolean) {
+    onLeave(client: Client, consented?: boolean)
+    {
         this.state.removePlayer(client);
 
         this.AllClients.delete(client.sessionId);
@@ -56,18 +61,26 @@ export class GameRoom extends Room<State> {
 
     listenPlayerMsg()
     {
-        // Triggers when any other type of message is sent,
-        // excluding "move", which has its own specific handler defined above.
-        this.onMessage("move", (client, message) => {
-            // console.log(client.sessionId, "sent", message);
-            let msg= {msg: message, playerID: client.sessionId}
 
-            this.AllClients.forEach((client)=>
+        this.onMessage("move", (client, message) =>
+        {
+            // console.log(client.sessionId, "sent", message);
+            let msg = {msg: message, playerID: client.sessionId}
+
+            // let player = this.getPlayerByID(client.sessionId);
+
+            this.AllClients.forEach((client) =>
             {
                 client.send("move", JSON.stringify(msg))
             })
         });
 
+    }
+
+
+    getPlayerByID(sessionId: string): Player | null
+    {
+        return <Player>this.state.players.get(sessionId);
     }
 
 }

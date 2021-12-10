@@ -17,6 +17,10 @@ class Player extends schema_1.Schema {
         this.name = name || (0, Utils_1.randomChineseName)();
         this.dir = true;
     }
+    setPos(x, y) {
+        this.x = x;
+        this.y = y;
+    }
 }
 __decorate([
     (0, schema_1.type)("string")

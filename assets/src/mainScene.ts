@@ -46,9 +46,10 @@ export default class mainScene extends cc.Component {
     nMaskZIndex = 99;
     nWallZIndex = 100;
 
+    bRoomMainPlayer:boolean = false;
+
     onLoad()
     {
-        netManager.startConnect();
         //开启碰撞
         let manager = cc.director.getPhysicsManager();
         manager.enabled = true;
@@ -97,8 +98,10 @@ export default class mainScene extends cc.Component {
     }
 
 
-    clientGameStart(nMainID)
+    clientGameStart(strMainID:string)
     {
+        netManager.strRoomMainID = strMainID;
+
         this.nodeMainPlayer.active =  true;
         this.nodeOtherPlayer.active = true;
         this.nodeJoystickBg.active =  true;
@@ -111,16 +114,19 @@ export default class mainScene extends cc.Component {
         this.nodeUIRoot.on(cc.Node.EventType.TOUCH_END   , this.onTouchEnd, this)
         this.nodeUIRoot.on(cc.Node.EventType.TOUCH_CANCEL, this.onTouchEnd, this)
 
-        if(nMainID == netManager.nMyPlayerID)
+        if(strMainID == netManager.strMyPlayerID)
         {
+            this.bRoomMainPlayer = true;
             this.nodeMainPlayer.position = cc.v3(0, 0);
             this.nodeOtherPlayer.position = cc.v3(50, 50);
         }
         else
         {
+            this.bRoomMainPlayer = false;
             this.nodeMainPlayer.position = cc.v3(50, 50);
             this.nodeOtherPlayer.position = cc.v3(0, 0);
         }
+        this.nodeMainPlayer.color = cc.color(255, 100, 100);
         this.cameraMain.node.position = this.nodeMainPlayer.position;
     }
 

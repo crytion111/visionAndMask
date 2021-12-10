@@ -22,7 +22,6 @@ class GameRoom extends colyseus_1.Room {
         this.state.addPlayer(client);
         this.AllClients.set(client.sessionId, client);
         this.onMessage("*", (client, message) => {
-            // console.log(client.sessionId, "sent", message);
             let msg = { msg: message, playerID: client.sessionId };
             this.AllClients.forEach((client) => {
                 client.send("*", JSON.stringify(msg));
@@ -43,15 +42,17 @@ class GameRoom extends colyseus_1.Room {
         this.AllClients.delete(client.sessionId);
     }
     listenPlayerMsg() {
-        // Triggers when any other type of message is sent,
-        // excluding "move", which has its own specific handler defined above.
         this.onMessage("move", (client, message) => {
             // console.log(client.sessionId, "sent", message);
             let msg = { msg: message, playerID: client.sessionId };
+            // let player = this.getPlayerByID(client.sessionId);
             this.AllClients.forEach((client) => {
                 client.send("move", JSON.stringify(msg));
             });
         });
+    }
+    getPlayerByID(sessionId) {
+        return this.state.players.get(sessionId);
     }
 }
 exports.GameRoom = GameRoom;

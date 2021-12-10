@@ -4,7 +4,7 @@ import { Player } from './Player';
 
 export class State extends Schema {
     // MapSchema是colyseus的对象实体模板
-    @type({ map: Player })
+    @type({map: Player})
     players = new MapSchema<Player>();
 
     /**
@@ -13,7 +13,8 @@ export class State extends Schema {
      * @param {Client} client
      * @memberof PlayerState
      */
-    addPlayer(client: Client) {
+    addPlayer(client: Client)
+    {
         let player = new Player(0, 0);
         this.players.set(client.sessionId, player);
     }
@@ -24,7 +25,8 @@ export class State extends Schema {
      * @param {Client} client
      * @memberof PlayerState
      */
-    removePlayer(client: Client) {
+    removePlayer(client: Client)
+    {
         this.players.delete(client.sessionId);
     }
 }

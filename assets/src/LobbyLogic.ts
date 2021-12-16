@@ -13,6 +13,7 @@ export default class LobbyLogic extends cc.Component
     @property(cc.Label)
     labelStatus:cc.Label = null;
 
+    nCountTime:number = 3;
 
     start ()
     {
@@ -45,6 +46,20 @@ export default class LobbyLogic extends cc.Component
 
     clientGameStart()
     {
-        this.node.active = false;
+        cc.game.emit(EventName.CLIENT_SHOW_TIPS, "玩家到齐,游戏即将开始!");
+        this.schedule(this.countTime, 1);
+    }
+
+    countTime()
+    {
+        cc.game.emit(EventName.CLIENT_SHOW_TIPS, this.nCountTime + "", 50);
+        this.nCountTime--;
+        if(this.nCountTime < 0)
+        {
+            cc.game.emit(EventName.CLIENT_HIDE_TIPS);
+            this.unschedule(this.countTime);
+            this.node.active = false;
+            cc.game.emit(EventName.CLIENT_GAME_SHOW_START);
+        }
     }
 }

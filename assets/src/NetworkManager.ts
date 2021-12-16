@@ -32,7 +32,7 @@ class NetworkManager {
     async startConnect()
     {
         // @ts-ignore
-        this.netClient = new Colyseus.Client('ws://localhost:2567');
+        this.netClient = new Colyseus.Client('ws://139.196.254.34:2567');
         try
         {
             this.netRoom = await this.netClient.joinOrCreate("room_name");
@@ -76,10 +76,9 @@ class NetworkManager {
             }
         })
 
-        this.netRoom.onLeave(() =>
+        this.netRoom.onLeave((code) =>
         {
-            // @ts-ignore
-            console.log("LEFT ROOM", arguments);
+            console.log("玩家====> LEFT ROOM", code);
         });
 
         this.netRoom.onStateChange((state) =>
@@ -91,6 +90,17 @@ class NetworkManager {
             })
 
             // console.log("state change: ", this.PlayersInfo.keys(),  state.players.size);
+        });
+    }
+
+    leaveRoom()
+    {
+        this.netRoom.leave().then((value) =>
+        {
+            cc.log("leaveRoomleaveRoom1+===>" + value);
+        }, (reason) =>
+        {
+            cc.log("leaveRoomleaveRoom2+===>" + JSON.stringify(reason));
         });
     }
 

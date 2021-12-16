@@ -15,12 +15,18 @@ export default class mainScene extends cc.Component {
     cameraUI:cc.Camera = null;
 
     @property(cc.Node)
+    nodeLobbyRootUI:cc.Node = null;
+
+    @property(cc.Node)
     nodeGameBg:cc.Node = null;
     @property(cc.Node)
     nodeMainPlayer:cc.Node = null;
 
     @property(cc.Node)
     nodeOtherPlayer:cc.Node = null;
+
+    @property(cc.Node)
+    nodeArrow:cc.Node = null;
 
     @property(cc.Graphics)
     graphicsLine:cc.Graphics = null;
@@ -36,17 +42,32 @@ export default class mainScene extends cc.Component {
     @property(cc.Node)
     nodeJoystickBall:cc.Node = null;
 
+    @property(cc.Label)
+    labelTipsNode:cc.Label = null;
+
+    @property(cc.Label)
+    labelTimeCount:cc.Label = null;
+
+    nGameAllCount:number = 0;
+
+    nAllMeatCount:number = 20;
+    // 每20秒显示一次礼物位置
+    nShowMeatCount:number = 0;
+
     bCanMove:boolean = false;
     posCurrentJoyStick:cc.Vec3 = null;
 
     fPerFrameSpeed :number = 0;
 
     nodeWallRootArr:cc.Node[] = [];
+
     nPlayerZIndex = 98;
     nMaskZIndex = 99;
     nWallZIndex = 100;
+    nArrowZIndex = 101;
 
     bRoomMainPlayer:boolean = false;
+    bGameStarted:boolean = false;
 
     onLoad()
     {
@@ -55,14 +76,18 @@ export default class mainScene extends cc.Component {
         manager.enabled = true;
         // manager.debugDrawFlags = 1;
         manager.gravity = cc.v2(0, 0);
+
+        this.nShowMeatCount = this.nAllMeatCount;
+
+        this.nodeLobbyRootUI.active = true;
+        this.labelTipsNode.node.active = false;
+        this.nodeArrow.active = false;
+        this.nodeArrow.zIndex = this.nArrowZIndex;
     }
 
     start ()
     {
         this.graphicsLine.node.zIndex = this.nMaskZIndex;
-
-        this.fPerFrameSpeed = 5;
-
         let aaaaTemp = [];
         for (let i = 0; i < 500; i++)
         {
@@ -83,10 +108,14 @@ export default class mainScene extends cc.Component {
         this.nodeMainPlayer.active = false;
         this.nodeOtherPlayer.active = false;
         this.nodeJoystickBg.active = false;
+
+        this.bGameStarted = false;
+
         cc.game.on(EventName.CLIENT_GAME_START, this.clientGameStart, this);
+        cc.game.on(EventName.CLIENT_GAME_SHOW_START, this.gameViewShow, this);
 
-
-
+        cc.game.on(EventName.CLIENT_SHOW_TIPS, this.showTips, this);
+        cc.game.on(EventName.CLIENT_HIDE_TIPS, this.hideTips, this);
 
         // 固定的摇杆
         // this.nodeJoystickBg.on(cc.Node.EventType.TOUCH_START, this.JoyStickTouchStart, this);
@@ -97,10 +126,112 @@ export default class mainScene extends cc.Component {
         this.showGraLines();
     }
 
+    showTips(strCon, nFrontSize = 30)
+    {
+        this.labelTipsNode.node.active = true;
+        this.labelTipsNode.fontSize = nFrontSize;
+        this.labelTipsNode.lineHeight = nFrontSize;
+        this.labelTipsNode.string = strCon;
+        this.labelTipsNode.node.position = cc.v3(0, 120);
+        this.labelTipsNode.node.opacity = 255;
+        this.labelTipsNode.node.stopAllActions();
+        cc.tween(this.labelTipsNode.node)
+            .delay(2)
+            .parallel(
+                cc.tween(this.labelTipsNode.node).to(0.3, {position: cc.v3(0, 160)}),
+                cc.tween(this.labelTipsNode.node).to(0.3, {opacity: 0}),
+            )
+            .call(()=>
+            {
+                this.labelTipsNode.node.active = false;
+            })
+            .start();
+    }
+
+    hideTips()
+    {
+        this.labelTipsNode.node.active = false;
+        this.labelTipsNode.node.position = cc.v3(0, 120);
+    }
+
+    gameViewShow()
+    {
+        if(this.bRoomMainPlayer)
+        {
+            cc.game.emit(EventName.CLIENT_SHOW_TIPS, "你是猎人, 请追捕猎物");
+        }
+        else
+        {
+            cc.game.emit(EventName.CLIENT_SHOW_TIPS, "你是猎物, 请逃脱这场追捕");
+        }
+        this.nGameAllCount = 300;
+        this.labelTimeCount.string = this.nGameAllCount+"";
+        this.schedule(this.scheduleTimeCount, 1);
+    }
+
+    scheduleTimeCount()
+    {
+        this.nGameAllCount--;
+        this.nShowMeatCount--;
+        this.labelTimeCount.string = this.nGameAllCount + "";
+        if(this.nShowMeatCount == 0)
+        {
+            this.nShowMeatCount = this.nAllMeatCount;
+            this.showMeatPlayerPos();
+        }
+        if(this.nGameAllCount == 0)
+        {
+            this.unschedule(this.scheduleTimeCount);
+            this.clientGameTimeEnd();
+        }
+    }
+
+    showMeatPlayerPos()
+    {
+        if (this.bRoomMainPlayer)
+        {
+            cc.game.emit(EventName.CLIENT_SHOW_TIPS, "猎物位置显示,快追!!!!!!!!!!");
+            this.nodeArrow.active = true;
+
+            this.showOtherPos();
+            this.schedule(this.showOtherPos, 0.01, 500);
+            this.nodeArrow.stopAllActions();
+            cc.tween(this.nodeArrow)
+                .delay(2)
+                .call(() =>
+                {
+                    this.unschedule(this.showOtherPos);
+                    this.nodeArrow.active = false;
+                })
+                .start();
+        }
+        else
+        {
+            cc.game.emit(EventName.CLIENT_SHOW_TIPS, "位置暴露,请尽快躲避到其他地方!!!!!!!!!!!!");
+        }
+    }
+
+    showOtherPos()
+    {
+        let posOther = this.nodeOtherPlayer.position;
+        let posMain = this.nodeMainPlayer.position;
+        let vecArrow = cc.v3(posOther.x - posMain.x, posOther.y - posMain.y);
+        this.nodeArrow.position = posMain;
+        let nNewAngle = Math.atan2(vecArrow.x, vecArrow.y) * (180 / Math.PI);
+        this.nodeArrow.angle = -nNewAngle;
+    }
+
+    clientGameTimeEnd()
+    {
+        cc.game.emit(EventName.CLIENT_SHOW_TIPS, "时间到");
+        this.bGameStarted = false;
+    }
 
     clientGameStart(strMainID:string)
     {
-        netManager.strRoomMainID = strMainID;
+        this.bGameStarted = true;
+
+        // netManager.strRoomMainID = strMainID;
 
         this.nodeMainPlayer.active =  true;
         this.nodeOtherPlayer.active = true;
@@ -114,20 +245,30 @@ export default class mainScene extends cc.Component {
         this.nodeUIRoot.on(cc.Node.EventType.TOUCH_END   , this.onTouchEnd, this)
         this.nodeUIRoot.on(cc.Node.EventType.TOUCH_CANCEL, this.onTouchEnd, this)
 
+
+        this.nodeMainPlayer.color = cc.color(255, 255, 255);
+        this.nodeOtherPlayer.color = cc.color(255, 255, 255);
+        this.fPerFrameSpeed = 5;
         if(strMainID == netManager.strMyPlayerID)
         {
+            // 速度加快
+            this.fPerFrameSpeed = 7;
             this.bRoomMainPlayer = true;
             this.nodeMainPlayer.position = cc.v3(0, 0);
-            this.nodeOtherPlayer.position = cc.v3(50, 50);
+            this.nodeOtherPlayer.position = cc.v3(2500, -1600);
+            this.nodeMainPlayer.color = cc.color(255, 100, 100);
         }
         else
         {
             this.bRoomMainPlayer = false;
-            this.nodeMainPlayer.position = cc.v3(50, 50);
+            this.nodeMainPlayer.position = cc.v3(2500, -1600);
             this.nodeOtherPlayer.position = cc.v3(0, 0);
+            this.nodeOtherPlayer.color = cc.color(255, 100, 100);
         }
-        this.nodeMainPlayer.color = cc.color(255, 100, 100);
+
         this.cameraMain.node.position = this.nodeMainPlayer.position;
+
+        this.showGraLines();
     }
 
     OtherPlayerMove(id, data)
@@ -137,12 +278,20 @@ export default class mainScene extends cc.Component {
 
     onTouchStart(event)
     {
+        if(!this.bGameStarted)
+        {
+            return;
+        }
         let posLocal = event.getLocation();
         posLocal = this.nodeJoystickBg.parent.convertToNodeSpaceAR(posLocal);
         this.nodeJoystickBg.position = cc.v3(posLocal.x, posLocal.y);
     }
     onTouchMove(event)
     {
+        if(!this.bGameStarted)
+        {
+            return;
+        }
         this.bCanMove = true;
         let posLocal = event.getLocation();
         posLocal = this.nodeJoystickBg.convertToNodeSpaceAR(posLocal);
@@ -167,6 +316,10 @@ export default class mainScene extends cc.Component {
 
     onTouchEnd(event)
     {
+        if(!this.bGameStarted)
+        {
+            return;
+        }
         let posLocal = event.getLocation();
         this.posCurrentJoyStick = cc.v3(0, 0);
 
@@ -175,56 +328,71 @@ export default class mainScene extends cc.Component {
     }
 
 
-
-    JoyStickTouchStart(event)
-    {
-        let posLocal = event.getLocation();
-        posLocal = this.nodeJoystickBg.convertToNodeSpaceAR(posLocal);
-        this.posCurrentJoyStick = posLocal;
-
-        this.nodeJoystickBall.setPosition(this.posCurrentJoyStick);
-
-        this.bCanMove = true;
-
-    }
-
-    JoyStickTouchMove(event)
-    {
-        let posLocal = event.getLocation();
-        posLocal = this.nodeJoystickBg.convertToNodeSpaceAR(posLocal);
-        this.posCurrentJoyStick = posLocal;
-
-        //移动到范围外, 最多移动到半径位置
-        let fPosLength = posLocal.mag();
-        if(fPosLength > 75)
-        {
-            let fSin = posLocal.y/fPosLength;
-            let fCos = posLocal.x/fPosLength;
-            let fMaxX = 75*fCos;
-            let fMaxY = 75*fSin;
-
-            this.nodeJoystickBall.setPosition(fMaxX, fMaxY);
-        }
-        else
-        {
-            this.nodeJoystickBall.setPosition(this.posCurrentJoyStick);
-        }
-
-    }
-
-    JoyStickTouchEnd(event)
-    {
-        let posLocal = event.getLocation();
-        this.posCurrentJoyStick = cc.v3(0, 0);
-
-        this.nodeJoystickBall.setPosition(this.posCurrentJoyStick);
-        this.bCanMove = false;
-    }
+    //
+    // JoyStickTouchStart(event)
+    // {
+    //     let posLocal = event.getLocation();
+    //     posLocal = this.nodeJoystickBg.convertToNodeSpaceAR(posLocal);
+    //     this.posCurrentJoyStick = posLocal;
+    //
+    //     this.nodeJoystickBall.setPosition(this.posCurrentJoyStick);
+    //
+    //     this.bCanMove = true;
+    //
+    // }
+    //
+    // JoyStickTouchMove(event)
+    // {
+    //     let posLocal = event.getLocation();
+    //     posLocal = this.nodeJoystickBg.convertToNodeSpaceAR(posLocal);
+    //     this.posCurrentJoyStick = posLocal;
+    //
+    //     //移动到范围外, 最多移动到半径位置
+    //     let fPosLength = posLocal.mag();
+    //     if(fPosLength > 75)
+    //     {
+    //         let fSin = posLocal.y/fPosLength;
+    //         let fCos = posLocal.x/fPosLength;
+    //         let fMaxX = 75*fCos;
+    //         let fMaxY = 75*fSin;
+    //
+    //         this.nodeJoystickBall.setPosition(fMaxX, fMaxY);
+    //     }
+    //     else
+    //     {
+    //         this.nodeJoystickBall.setPosition(this.posCurrentJoyStick);
+    //     }
+    //
+    // }
+    //
+    // JoyStickTouchEnd(event)
+    // {
+    //     let posLocal = event.getLocation();
+    //     this.posCurrentJoyStick = cc.v3(0, 0);
+    //
+    //     this.nodeJoystickBall.setPosition(this.posCurrentJoyStick);
+    //     this.bCanMove = false;
+    // }
+    //
+    //
 
     update(dt: number)
     {
+        if(this.bGameStarted)
+        {
+            let posOther = this.nodeOtherPlayer.position;
+            let posMain = this.nodeMainPlayer.position;
+            let vecArrow = cc.v3(posOther.x - posMain.x, posOther.y - posMain.y);
+            let nDis = vecArrow.mag();
+            if(nDis <= 26)
+            {
+                this.playerCatch();
+            }
+        }
+
+
         //使用了摇杆控制
-        if (this.bCanMove && this.posCurrentJoyStick.mag() > 10)
+        if (this.bGameStarted && this.bCanMove && this.posCurrentJoyStick.mag() > 10)
         {
             //算出joystick的正弦余弦, 乘上移动速度,就是x和y方向上的移动速度了.
             let fSin = this.posCurrentJoyStick.y / this.posCurrentJoyStick.mag();
@@ -249,6 +417,67 @@ export default class mainScene extends cc.Component {
         }
     }
 
+    playerCatch()
+    {
+        this.bGameStarted = false;
+        this.unschedule(this.scheduleTimeCount);
+        cc.game.emit(EventName.CLIENT_SHOW_TIPS, "可算逮到你个小比崽子了!!!!!!", 80);
+
+
+
+        cc.tween(this)
+            .delay(2.3)
+            .call(()=>
+            {
+                cc.game.emit(EventName.CLIENT_SHOW_TIPS, "游戏重开, 双方角色互换!!!!", 50);
+
+                this.reStartGame();
+            })
+            .start();
+    }
+
+
+    reStartGame()
+    {
+        this.bGameStarted = true;
+
+        this.bRoomMainPlayer = !this.bRoomMainPlayer;
+        this.nodeMainPlayer.color = cc.color(255, 255, 255);
+        this.nodeOtherPlayer.color = cc.color(255, 255, 255);
+        this.fPerFrameSpeed = 5;
+        if(this.bRoomMainPlayer)
+        {
+            // 速度加快
+            this.fPerFrameSpeed = 7;
+            this.nodeMainPlayer.position = cc.v3(0, 0);
+            this.nodeOtherPlayer.position = cc.v3(2500, -1600);
+            this.nodeMainPlayer.color = cc.color(255, 100, 100);
+        }
+        else
+        {
+            this.nodeMainPlayer.position = cc.v3(2500, -1600);
+            this.nodeOtherPlayer.position = cc.v3(0, 0);
+            this.nodeOtherPlayer.color = cc.color(255, 100, 100);
+        }
+        this.cameraMain.node.position = this.nodeMainPlayer.position;
+        this.showGraLines();
+
+        this.gameViewShow();
+    }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // 传入矩形, 返回4个点
     getRectFourPoint(node:cc.Node) : cc.Vec3[]

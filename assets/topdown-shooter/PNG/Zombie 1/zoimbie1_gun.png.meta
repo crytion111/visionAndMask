@@ -1,0 +1,36 @@
+{
+  "ver": "2.3.5",
+  "uuid": "1b0bb633-c364-4f62-9b6c-79f81fd14e86",
+  "type": "sprite",
+  "wrapMode": "clamp",
+  "filterMode": "bilinear",
+  "premultiplyAlpha": false,
+  "genMipmaps": false,
+  "packable": true,
+  "width": 49,
+  "height": 43,
+  "platformSettings": {},
+  "subMetas": {
+    "zoimbie1_gun": {
+      "ver": "1.0.4",
+      "uuid": "0574fa92-8635-4e25-9c37-aa1237957f6e",
+      "rawTextureUuid": "1b0bb633-c364-4f62-9b6c-79f81fd14e86",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": 0,
+      "offsetY": 0,
+      "trimX": 0,
+      "trimY": 0,
+      "width": 49,
+      "height": 43,
+      "rawWidth": 49,
+      "rawHeight": 43,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "subMetas": {}
+    }
+  }
+}

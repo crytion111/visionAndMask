@@ -2,6 +2,7 @@ import {GameUtils} from "./GameUtils";
 import {netManager} from "./NetworkManager";
 import {EventName} from "./EventName";
 import {MapData} from "./MapData";
+import PlayerSrc from "./PlayerSrc";
 
 
 const {ccclass, property} = cc._decorator;
@@ -19,10 +20,11 @@ export default class mainScene extends cc.Component {
 
     @property(cc.Node)
     nodeGameBg:cc.Node = null;
-    @property(cc.Node)
-    nodeMainPlayer:cc.Node = null;
 
-    @property(cc.Node)
+    @property(cc.Prefab)
+    prefabPlayer:cc.Prefab = null;
+
+    nodeMainPlayer:cc.Node = null;
     nodeOtherPlayer:cc.Node = null;
 
     @property(cc.Node)
@@ -83,6 +85,10 @@ export default class mainScene extends cc.Component {
         this.labelTipsNode.node.active = false;
         this.nodeArrow.active = false;
         this.nodeArrow.zIndex = this.nArrowZIndex;
+        this.nodeMainPlayer = cc.instantiate(this.prefabPlayer);
+        this.nodeOtherPlayer = cc.instantiate(this.prefabPlayer);
+        this.nodeGameBg.addChild(this.nodeMainPlayer)
+        this.nodeGameBg.addChild(this.nodeOtherPlayer)
     }
 
     start ()
@@ -219,6 +225,8 @@ export default class mainScene extends cc.Component {
         this.nodeArrow.position = posMain;
         let nNewAngle = Math.atan2(vecArrow.x, vecArrow.y) * (180 / Math.PI);
         this.nodeArrow.angle = -nNewAngle;
+
+
     }
 
     clientGameTimeEnd()
@@ -246,8 +254,8 @@ export default class mainScene extends cc.Component {
         this.nodeUIRoot.on(cc.Node.EventType.TOUCH_CANCEL, this.onTouchEnd, this)
 
 
-        this.nodeMainPlayer.color = cc.color(255, 255, 255);
-        this.nodeOtherPlayer.color = cc.color(255, 255, 255);
+        this.nodeMainPlayer.getComponent(PlayerSrc).resetPlayerInfo();
+        this.nodeOtherPlayer.getComponent(PlayerSrc).resetPlayerInfo();
         this.fPerFrameSpeed = 5;
         if(strMainID == netManager.strMyPlayerID)
         {
@@ -256,14 +264,14 @@ export default class mainScene extends cc.Component {
             this.bRoomMainPlayer = true;
             this.nodeMainPlayer.position = cc.v3(0, 0);
             this.nodeOtherPlayer.position = cc.v3(2500, -1600);
-            this.nodeMainPlayer.color = cc.color(255, 100, 100);
+            this.nodeMainPlayer.getComponent(PlayerSrc).setPlayerKiller();
         }
         else
         {
             this.bRoomMainPlayer = false;
             this.nodeMainPlayer.position = cc.v3(2500, -1600);
             this.nodeOtherPlayer.position = cc.v3(0, 0);
-            this.nodeOtherPlayer.color = cc.color(255, 100, 100);
+            this.nodeOtherPlayer.getComponent(PlayerSrc).setPlayerKiller();
         }
 
         this.cameraMain.node.position = this.nodeMainPlayer.position;
@@ -440,10 +448,15 @@ export default class mainScene extends cc.Component {
     reStartGame()
     {
         this.bGameStarted = true;
+        this.bCanMove = false;
+        this.nodeJoystickBg.active = false;
+        this.posCurrentJoyStick = cc.v3(0, 0);
 
         this.bRoomMainPlayer = !this.bRoomMainPlayer;
-        this.nodeMainPlayer.color = cc.color(255, 255, 255);
-        this.nodeOtherPlayer.color = cc.color(255, 255, 255);
+
+
+        this.nodeMainPlayer.getComponent(PlayerSrc).resetPlayerInfo();
+        this.nodeOtherPlayer.getComponent(PlayerSrc).resetPlayerInfo();
         this.fPerFrameSpeed = 5;
         if(this.bRoomMainPlayer)
         {
@@ -451,13 +464,13 @@ export default class mainScene extends cc.Component {
             this.fPerFrameSpeed = 7;
             this.nodeMainPlayer.position = cc.v3(0, 0);
             this.nodeOtherPlayer.position = cc.v3(2500, -1600);
-            this.nodeMainPlayer.color = cc.color(255, 100, 100);
+            this.nodeMainPlayer.getComponent(PlayerSrc).setPlayerKiller();
         }
         else
         {
             this.nodeMainPlayer.position = cc.v3(2500, -1600);
             this.nodeOtherPlayer.position = cc.v3(0, 0);
-            this.nodeOtherPlayer.color = cc.color(255, 100, 100);
+            this.nodeOtherPlayer.getComponent(PlayerSrc).setPlayerKiller();
         }
         this.cameraMain.node.position = this.nodeMainPlayer.position;
         this.showGraLines();

@@ -14,6 +14,7 @@ export default class LobbyLogic extends cc.Component
     labelStatus:cc.Label = null;
 
     nCountTime:number = 3;
+    bClickConnect:boolean = false;
 
     start ()
     {
@@ -28,7 +29,11 @@ export default class LobbyLogic extends cc.Component
     // update (dt) {}
     onClickConnect()
     {
-        netManager.startConnect();
+        if(!this.bClickConnect)
+        {
+            this.bClickConnect = true;
+            netManager.startConnect();
+        }
     }
 
     loginSuccess(nPlayerID)

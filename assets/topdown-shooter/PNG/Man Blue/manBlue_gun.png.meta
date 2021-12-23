@@ -1,0 +1,36 @@
+{
+  "ver": "2.3.5",
+  "uuid": "222ae863-8243-4e8c-ab19-8f3ace7eee22",
+  "type": "sprite",
+  "wrapMode": "clamp",
+  "filterMode": "bilinear",
+  "premultiplyAlpha": false,
+  "genMipmaps": false,
+  "packable": true,
+  "width": 49,
+  "height": 43,
+  "platformSettings": {},
+  "subMetas": {
+    "manBlue_gun": {
+      "ver": "1.0.4",
+      "uuid": "7cde8503-9ec1-4c61-a8a1-101e5f5f112a",
+      "rawTextureUuid": "222ae863-8243-4e8c-ab19-8f3ace7eee22",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": 0,
+      "offsetY": 0,
+      "trimX": 0,
+      "trimY": 0,
+      "width": 49,
+      "height": 43,
+      "rawWidth": 49,
+      "rawHeight": 43,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "subMetas": {}
+    }
+  }
+}
